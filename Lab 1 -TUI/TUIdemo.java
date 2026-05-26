@@ -7,6 +7,11 @@ import jexer.TText;
 import jexer.TWindow;
 import jexer.event.TMenuEvent;
 import jexer.menu.TMenu;
+import com.mybank.domain.Bank;
+import com.mybank.domain.Customer;
+import com.mybank.domain.Account;
+import com.mybank.domain.SavingsAccount;
+import com.mybank.domain.CheckingAccount;
 
 /**
  *
@@ -42,6 +47,8 @@ public class TUIdemo extends TApplication {
         //end of 'Help' menu 
 
         setFocusFollowsMouse(true);
+        initializeBankData();
+
         //Customer window
         ShowCustomerDetails();
     }
@@ -70,13 +77,45 @@ public class TUIdemo extends TApplication {
             @Override
             public void DO() {
                 try {
-                    int custNum = Integer.parseInt(custNo.getText());
-                    //details about customer with index==custNum
-                    details.setText("Owner Name: John Doe (id="+custNum+")\nAccount Type: 'Checking'\nAccount Balance: $200.00");
+                    int custNum = Integer.parseInt(custNo.getText().trim());
+                    if (custNum >= 0 && custNum < Bank.getNumberOfCustomers()) {
+                        Customer customer = Bank.getCustomer(custNum);
+
+                        String nameLine = "Owner Name: " + customer.getFirstName() + " " + customer.getLastName();
+                        String typeLine = "Account Type: No accounts";
+                        String balanceLine = "Account Balance: $0.00";
+                        if (customer.getNumberOfAccounts() > 0) {
+                            Account account = customer.getAccount(0);
+
+                            if (account instanceof SavingsAccount) {
+                                typeLine = "Account Type: Savings";
+                            } else if (account instanceof CheckingAccount) {
+                                typeLine = "Account Type: Checking";
+                            } else {
+                                typeLine = "Account Type: Custom";
+                            }
+
+                            balanceLine = "Account Balance: $" + account.getBalance();
+                        }
+
+                        details.setText(nameLine + "\n" + typeLine + "\n" + balanceLine);
+                    } else {
+                        messageBox("Error", "Customer with ID " + custNum + " does not exist!").show();
+                    }
                 } catch (Exception e) {
                     messageBox("Error", "You must provide a valid customer number!").show();
                 }
             }
         });
+    }
+
+    private void initializeBankData() {
+        Bank.addCustomer("Jane", "Simms");
+        Customer jane = Bank.getCustomer(0);
+        jane.addAccount(new SavingsAccount(500.00, 0.05));
+
+        Bank.addCustomer("Owen", "Bryant");
+        Customer owen = Bank.getCustomer(1);
+        owen.addAccount(new CheckingAccount(200.00, 100.00));
     }
 }
